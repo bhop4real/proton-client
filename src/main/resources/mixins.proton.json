@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.7.11",
+  "package": "com.bhop4real.proton.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.proton.refmap.json",
+  "mixins": [
+    "MixinGuiScreen",
+    "MixinMovementInputFromOptions"
+  ],
+  "client": [
+    "MixinNetHandlerPlayClient",
+    "MixinEntityPlayerSP",
+    "MixinEntity",
+    "MixinEntityLivingBase",
+    "MixinRendererLivingEntity"
+  ],
+  "server": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
+

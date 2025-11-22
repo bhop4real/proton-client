@@ -1,0 +1,16 @@
+[
+{
+  "modid": "proton",
+  "name": "Proton",
+  "description": "A utility client mod for Minecraft 1.8.9 featuring modules, keybinds, and client-side enhancements.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["bhop4real", "Cursor"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

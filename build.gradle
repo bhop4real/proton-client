@@ -1,0 +1,179 @@
+
+// For those who want the bleeding edge
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven {
+            name = "forge"
+            url = "https://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "spongepowered"
+            url = "https://repo.spongepowered.org/maven"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+        // Use a Shadow version compatible with older Gradle used by ForgeGradle 2.1
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
+/*
+// for people who want stable - not yet functional for MC 1.8.8 - we require the forgegradle 2.1 snapshot
+plugins {
+    id "net.minecraftforge.gradle.forge" version "2.0.2"
+}
+*/
+version = "1.0"
+group= "com.bhop4real.proton" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "proton"
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = "run"
+    
+    // the mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   snapshot are built nightly.
+    // stable_#            stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not allways work.
+    // simply re-run your setup task after changing the mappings to update your workspace.
+    mappings = "stable_20"
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    
+    // Mixin configuration
+    clientJvmArgs.add("-Dmixin.debug=true")
+    clientJvmArgs.add("-Dmixin.hotSwap=true")
+    serverJvmArgs.add("-Dmixin.debug=true")
+    serverJvmArgs.add("-Dmixin.hotSwap=true")
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    maven {
+        name = "SpongePowered"
+        url = "https://repo.spongepowered.org/maven"
+    }
+    mavenCentral()
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io"
+    }
+}
+
+configurations {
+    shade
+    compile.extendsFrom shade
+}
+
+dependencies {
+    // Mixin for bytecode manipulation
+    compile('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
+        exclude module: 'launchwrapper'
+        exclude module: 'guava'
+        exclude module: 'gson'
+        exclude module: 'commons-io'
+    }
+    
+    // you may put jars on which you depend on in ./libs
+    // or you may define them like so..
+    //compile "some.group:artifact:version:classifier"
+    //compile "some.group:artifact:version"
+      
+    // real examples
+    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
+    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
+
+    // the 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
+    //provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+
+    // the deobf configurations:  'deobfCompile' and 'deobfProvided' are the same as the normal compile and provided,
+    // except that these dependencies get remapped to your current MCP mappings
+    //deobfCompile 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+    //deobfProvided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+
+    // for more info...
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+    // MP3 support via Java Sound service providers (shaded into the mod)
+    shade 'javazoom:jlayer:1.0.1'
+    shade 'com.googlecode.soundlibs:mp3spi:1.9.5-1'
+    shade 'com.googlecode.soundlibs:tritonus-share:0.3.7-3'
+}
+
+mixin {
+    defaultObfuscationEnv "searge"
+    add sourceSets.main, "mixins.proton.refmap.json"
+}
+
+// Keep the normal jar slim; we will ship the relocated shadow jar
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+shadowJar {
+	// Build a fat jar from shaded configuration
+	configurations = [project.configurations.shade]
+	// Publish shaded jar as the main artifact name (no -all classifier)
+	classifier = ''
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	// Remove problematic metadata/signatures and module-info
+	exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+	exclude 'META-INF/LICENSE', 'META-INF/LICENSE.*', 'META-INF/NOTICE', 'META-INF/NOTICE.*', 'META-INF/DEPENDENCIES'
+	exclude 'META-INF/*.kotlin_module', 'META-INF/*.version'
+	exclude 'module-info.class'
+}
+
+reobf {
+    shadowJar {
+        // Reobfuscate the relocated shadow jar for Forge 1.8.9 runtime
+        mappingType = 'SEARGE'
+    }
+}
+
+// Ensure build produces and publishes the reobfuscated shaded jar, and disable slim jar
+tasks.build.dependsOn tasks.reobfShadowJar
+jar.enabled = false
+artifacts {
+	archives shadowJar
+}
+
+// Disable default reobfJar which expects the slim jar, and wire assemble to shaded jar
+afterEvaluate {
+	def reobfJarTask = tasks.findByName('reobfJar')
+	if (reobfJarTask != null) {
+		reobfJarTask.enabled = false
+	}
+	// Ensure standard assemble path also produces our shaded + reobfed jar
+	tasks.assemble.dependsOn tasks.reobfShadowJar
+}
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    // This includes assets/, proton/, shaders/, etc.
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
