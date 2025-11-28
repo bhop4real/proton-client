@@ -12,7 +12,7 @@ Proton is a client-side modification for Minecraft 1.8.9 that provides various g
 
 - **AutoClicker** - Automated clicking with advanced randomization and pattern scripting
 - **AimAssist** - Assists with aiming at targets
-- **KillAura** - Automated combat module
+- ~~**KillAura** - Automated combat module~~ Currently broken, and not planned to fix
 - **Speed** - Movement speed enhancements
 - **Velocity** - Knockback reduction
 - **Reach** - Extended reach distance
@@ -177,4 +177,6 @@ See individual license files in the repository for details.
 This is a utility client for Minecraft 1.8.9. Use responsibly and in accordance with server rules and Minecraft's Terms of Service. The authors are not responsible for any consequences resulting from the use of this software.
 
 ~~For issues, feature requests, or questions, please open an issue on the [GitHub repository](https://github.com/bhop4real/proton-client).~~
+
+This client is coded by Cursor AI.
 
